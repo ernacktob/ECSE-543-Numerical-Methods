@@ -109,6 +109,113 @@ cleanup_:
 	return result;
 }
 
+int simple_test(void)
+{
+	const double testA1[][2] = {{1.0, -1.0}, {-1.0, 5.0}};
+	const double testb1[] = {-1.0, 9.0};
+
+	const double testA2[][3] = {{1.0, 0.0, -1.0}, {0.0, 4.0, 0.0}, {-1.0, 0.0, 2.0}};
+	const double testb2[] = {-2.0, 8.0, 5.0};
+
+	const double testA3[][4] = {{4.0, 4.0, 4.0, 4.0}, {4.0, 5.0, 5.0, 5.0}, {4.0, 5.0, 14.0, 14.0}, {4.0, 5.0, 14.0, 30.0}};
+	const double testb3[] = {40.0, 49.0, 112.0, 176.0};
+
+	struct Matrix *A1, *A2, *A3;
+	struct Vector *b1, *b2, *b3;
+	struct Matrix *L1, *L2, *L3;
+	struct Vector *x1, *x2, *x3;
+
+	size_t i, j;
+	int result;
+
+	A1 = Matrix_new(2, 2);
+	b1 = Vector_new(2);
+
+	A2 = Matrix_new(3, 3);
+	b2 = Vector_new(3);
+
+	A3 = Matrix_new(4, 4);
+	b3 = Vector_new(4);
+
+	for (i = 0; i < 2; i++) {
+		for (j = 0; j < 2; j++)
+			A1->entries[i][j] = testA1[i][j];
+
+		b1->entries[i] = testb1[i];
+	}
+
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++)
+			A2->entries[i][j] = testA2[i][j];
+
+		b2->entries[i] = testb2[i];
+	}
+
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++)
+			A3->entries[i][j] = testA3[i][j];
+
+		b3->entries[i] = testb3[i];
+	}
+
+	if (cholesky_solve_system(&x1, A1, b1, &L1) != 0) {
+		printf("Failed to solve system.\n");
+		result = -1;
+		goto cleanup;
+	}
+
+	if (cholesky_solve_system(&x2, A2, b2, &L2) != 0) {
+		printf("Failed to solve system.\n");
+		result = -1;
+		goto cleanup;
+	}
+
+	if (cholesky_solve_system(&x3, A3, b3, &L3) != 0) {
+		printf("Failed to solve system.\n");
+		result = -1;
+		goto cleanup;
+	}
+
+	printf("L1 = ");
+	Matrix_print(L1);
+	printf("\n");
+	printf("x1 = ");
+	Vector_print(x1);
+	printf("\n\n");
+
+	printf("L2 = ");
+	Matrix_print(L2);
+	printf("\n");
+	printf("x2 = ");
+	Vector_print(x2);
+	printf("\n\n");
+
+	printf("L3 = ");
+	Matrix_print(L3);
+	printf("\n");
+	printf("x3 = ");
+	Vector_print(x3);
+	printf("\n\n");
+
+	result = 0;
+
+cleanup:
+	Matrix_delete(A1);
+	Matrix_delete(A2);
+	Matrix_delete(A3);
+	Vector_delete(b1);
+	Vector_delete(b2);
+	Vector_delete(b3);
+	Matrix_delete(L1);
+	Matrix_delete(L2);
+	Matrix_delete(L3);
+	Vector_delete(x1);
+	Vector_delete(x2);
+	Vector_delete(x3);
+
+	return result;
+}
+
 int main(void)
 {
 	int success_count = 0;
@@ -117,6 +224,11 @@ int main(void)
 	int i;
 
 	srand(time(NULL));
+
+	if (simple_test() != 0) {
+		printf("Failed the simple test... :(\n");
+		return 0;
+	}
 
 	for (i = 0; i < NTRIALS; i++) {
 		switch (test_solver()) {

@@ -120,7 +120,7 @@ int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const stru
 	struct Vector *x;
 
 	if (A->m != A->n)
-		return -1;
+		exit_with_error("Matrix A must be a square matrix.");
 
 	if (b->n != A->m)
 		exit_with_error("Matrix A and vector b not compatible for the system of equations.");
