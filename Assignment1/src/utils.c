@@ -9,7 +9,6 @@
 
 /* PROTOTYPES */
 static void print_row(const double *row, size_t n);
-static double random_double_in_range(double max_absvalue, double precision);
 /* END PROTOTYPES */
 
 static void print_row(const double *row, size_t n)
@@ -19,7 +18,7 @@ static void print_row(const double *row, size_t n)
 	printf("[");
 
 	for (i = 0; i < n; i++) {
-		printf("%f", row[i]);
+		printf("%.10f", row[i]);
 
 		if (i != n - 1)
 			printf(", ");
@@ -28,14 +27,14 @@ static void print_row(const double *row, size_t n)
 	printf("]");
 }
 
-static double random_double_in_range(double max_absvalue, double precision)
+double random_double_in_range(double max_absvalue, double resolution)
 {
-	int nbuckets = (int)(2.0 * max_absvalue / precision + 1.0);
+	int nbuckets = (int)(2.0 * max_absvalue / resolution + 1.0);
 	int middle = nbuckets / 2;
 	int random;
 
 	random = (rand() % nbuckets) - middle;
-	return random * precision;
+	return random * resolution;
 }
 
 void exit_with_error(const char *errmsg)
@@ -167,7 +166,7 @@ struct Matrix *Matrix_copy(const struct Matrix *M)
 	return cM;
 }
 
-struct Matrix *Matrix_random(size_t m, size_t n, double range, double precision, enum MatrixPattern pattern)
+struct Matrix *Matrix_random(size_t m, size_t n, double range, double resolution, enum MatrixPattern pattern)
 {
 	struct Matrix *M;
 	size_t i, j;
@@ -179,7 +178,7 @@ struct Matrix *Matrix_random(size_t m, size_t n, double range, double precision,
 			switch (pattern) {
 				case MATRIX_PATTERN_LOWER_TRIANGULAR:
 					if (j <= i)
-						M->entries[i][j] = random_double_in_range(range, precision);
+						M->entries[i][j] = random_double_in_range(range, resolution);
 					else
 						M->entries[i][j] = 0.0;
 
@@ -188,12 +187,12 @@ struct Matrix *Matrix_random(size_t m, size_t n, double range, double precision,
 					if (j <= i)
 						M->entries[i][j] = 0.0;
 					else
-						M->entries[i][j] = random_double_in_range(range, precision);
+						M->entries[i][j] = random_double_in_range(range, resolution);
 
 					break;
 				case MATRIX_PATTERN_SYMMETRIC:
 					if (j <= i)
-						M->entries[i][j] = random_double_in_range(range, precision);
+						M->entries[i][j] = random_double_in_range(range, resolution);
 					else
 						M->entries[i][j] = M->entries[j][i];
 
@@ -201,7 +200,7 @@ struct Matrix *Matrix_random(size_t m, size_t n, double range, double precision,
 
 				case MATRIX_PATTERN_NONE:
 				default:
-					M->entries[i][j] = random_double_in_range(range, precision);
+					M->entries[i][j] = random_double_in_range(range, resolution);
 					break;
 			}
 		}
@@ -210,7 +209,7 @@ struct Matrix *Matrix_random(size_t m, size_t n, double range, double precision,
 	return M;
 }
 
-struct Vector *Vector_random(size_t n, double range, double precision)
+struct Vector *Vector_random(size_t n, double range, double resolution)
 {
 	struct Vector *v;
 	size_t i;
@@ -218,7 +217,7 @@ struct Vector *Vector_random(size_t n, double range, double precision)
 	v = Vector_new(n);
 
 	for (i = 0; i < n; i++)
-		v->entries[i] = random_double_in_range(range, precision);
+		v->entries[i] = random_double_in_range(range, resolution);
 
 	return v;
 }
@@ -280,7 +279,7 @@ struct Matrix *Matrix_transpose(const struct Matrix *A)
 	return B;
 }
 
-int Matrix_is_symmetric(const struct Matrix *M, double precision)
+int Matrix_is_symmetric(const struct Matrix *M)
 {
 	size_t i, j;
 	size_t n;
@@ -292,7 +291,7 @@ int Matrix_is_symmetric(const struct Matrix *M, double precision)
 
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < i; j++) {
-			if (abs(M->entries[i][j] - M->entries[j][i]) > precision)
+			if (M->entries[i][j] != M->entries[j][i])
 				return 0;
 		}
 	}

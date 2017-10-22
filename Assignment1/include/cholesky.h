@@ -17,13 +17,13 @@
  * xp - pointer to solution vector that will be set after success
  * A - n x n real symmetric positive-definite matrix
  * b - n x 1 real vector in the equation Ax = b
- * precision - account for round-off errors within the given precision.
+ * Lp - if not NULL, stores the L matrix found during Cholesky decomposition.
  *
  * Returns:
  * 0 if operation successful
- * -1 if A is not symmetric positive-definite within the precision.
+ * -1 if A is not symmetric positive-definite.
  *
  */
-int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const struct Vector *b, double precision);
+int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const struct Vector *b, struct Matrix **Lp);
 
 #endif

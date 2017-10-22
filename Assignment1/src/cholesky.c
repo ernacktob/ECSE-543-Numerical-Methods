@@ -3,6 +3,17 @@
 
 #include "utils.h"
 
+/* Initialize upper triangle values of L to zero. */
+static void zero_upper_triangle(struct Matrix *L)
+{
+	size_t i, j;
+
+	for (i = 0; i < L->m; i++) {
+		for (j = i + 1; j < L->n; j++)
+			L->entries[i][j] = 0.0;
+	}
+}
+
 /* Cholesky decomposition
  * 
  * Decomposes an n x n real symmetric positive-definite matrix
@@ -15,27 +26,26 @@
  * Parameters:
  * n - dimension of matrix
  * A - matrix to decompose
- * precision - account for precision in case of round-off errors.
  *
  * Returns:
  * 0 if operation was successful
- * -1 if the matrix A is not positive-definite within the precision.
+ * -1 if the matrix A is not positive-definite.
  */
-static int cholesky_decomposition(double **A, size_t n, double precision)
+static int cholesky_decomposition(double **A, size_t n)
 {
 	double **L = A;	/* The result overwrites lower half of A */
 	size_t i, j, k;
 
 	for (j = 0; j < n; j++) {
 		/* Check that the matrix is positive-definite */
-		if (A[j][j] < precision)
+		if (A[j][j] <= 0.0)
 			return -1;
 
 		L[j][j] = sqrt(A[j][j]);
 
 		/* Check again that L[j][j] > 0 in case that
 		 * the sqrt introduced round-off errors... */
-		if (L[j][j] < precision)
+		if (L[j][j] <= 0.0)
 			return -1;
 
 		for (i = j + 1; i < n; i++) {
@@ -104,7 +114,7 @@ static void back_substitution(double *y, double **L, size_t n)
 }
 
 /* See cholesky.h header for documentation */
-int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const struct Vector *b, double precision)
+int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const struct Vector *b, struct Matrix **Lp)
 {
 	struct Matrix *L;
 	struct Vector *x;
@@ -115,12 +125,12 @@ int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const stru
 	if (b->n != A->m)
 		exit_with_error("Matrix A and vector b not compatible for the system of equations.");
 
-	if (!Matrix_is_symmetric(A, precision))
+	if (!Matrix_is_symmetric(A))
 		return -1;
 
 	L = Matrix_copy(A);
 
-	if (cholesky_decomposition(L->entries, L->n, precision) != 0) {
+	if (cholesky_decomposition(L->entries, L->n) != 0) {
 		Matrix_delete(L);
 		return -1;
 	}
@@ -130,7 +140,13 @@ int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const stru
 	forward_elimination(x->entries, L->entries, x->n);
 	back_substitution(x->entries, L->entries, x->n);
 
-	Matrix_delete(L);
+	if (Lp != NULL) {
+		zero_upper_triangle(L);
+		*Lp = L;
+	} else {
+		Matrix_delete(L);
+	}
+
 	*xp = x;
 
 	return 0;
