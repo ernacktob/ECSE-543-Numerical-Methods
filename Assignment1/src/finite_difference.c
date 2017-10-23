@@ -60,6 +60,19 @@ void print_grid(double **phi, size_t N)
 	printf("\n");
 }
 
+/* Applies successive over-relaxation on the potential finite-difference mesh
+ * by using the finite-difference approximation to Laplace's equation.
+ * - h is the node spacing in m,
+ * - w is the SOR parameter,
+ * - r is the residual for termination.
+ *
+ * The function returns the number of iterations before convergence.
+ * The parameter phip is a pointer that will be set to allocated memory
+ * for the finite-difference mesh. Np will be set to the number of nodes per row.
+ *
+ * We exploit the symmetry in both the vertical and horizontal half-planes,
+ * by applying the Neumann boundary conditions at x = 0.1m and y = 0.1m.
+ */
 unsigned int successive_over_relaxation(double ***phip, size_t *Np, double h, double w, double r)
 {
 	double **phi;
@@ -164,7 +177,6 @@ int main(void)
 		w = 1.0 + 0.1 * i;
 		iterations = successive_over_relaxation(&phi, &N, 0.02, w, r);
 		printf("%f\t%u\t\t%f\n", w, iterations, phi[(int)(x / h)][(int)(y / h)]);
-		printf("\n");
 		free_grid(phi, N);
 	}
 
