@@ -172,6 +172,38 @@ struct Vector *circuits_solve_voltages(const struct CircuitDescription *circuit)
 	return V;
 }
 
+struct Vector *circuits_solve_voltages_banded(const struct CircuitDescription *circuit, size_t hb)
+{
+	struct Matrix *M, *Atranspose, *YAtranspose;
+	struct Vector *b, *YE, *JminusYE;
+	struct Vector *V;
+
+	/* Compute M = AYA^T, which is the matrix that is obtained from KCL. */
+	Atranspose = Matrix_transpose(circuit->A);
+	YAtranspose = Matrix_multiply(circuit->Y, Atranspose);
+	M = Matrix_multiply(circuit->A, YAtranspose);
+
+	Matrix_delete(Atranspose);
+	Matrix_delete(YAtranspose);
+
+	/* Compute b = A(J - YE), which is the vector of source currents from KCL. */
+	YE = Vector_matrix_multiply(circuit->Y, circuit->E);
+	JminusYE = Vector_substract(circuit->J, YE);
+	b = Vector_matrix_multiply(circuit->A, JminusYE);
+
+	Vector_delete(YE);
+	Vector_delete(JminusYE);
+
+	/* Solve the system (AYA^T)V = A(J - YE) for the node voltages V. */
+	if (cholesky_solve_system_banded(&V, M, b, NULL, hb) != 0)
+		exit_with_error("The matrix AYA^T was not symmetric positive-definite.");
+
+	Vector_delete(b);
+	Matrix_delete(M);
+
+	return V;
+}
+
 void circuits_destroy(struct CircuitDescription *circuit)
 {
 	Vector_delete(circuit->E);

@@ -19,6 +19,7 @@ int circuits_parse_file(struct CircuitDescription *circuit, const char *filename
 
 /* Solve for the node voltages in a circuit described by CircuitDescription. */
 struct Vector *circuits_solve_voltages(const struct CircuitDescription *circuit);
+struct Vector *circuits_solve_voltages_banded(const struct CircuitDescription *circuit, size_t hb);
 
 /* Release memory allocated internally for CircuitDescription. */
 void circuits_destroy(struct CircuitDescription *circuit);

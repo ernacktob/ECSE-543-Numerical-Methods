@@ -26,4 +26,7 @@
  */
 int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const struct Vector *b, struct Matrix **Lp);
 
+/* This is the same except it also include half bandwidth hb to speed up computations for question 2. */
+int cholesky_solve_system_banded(struct Vector **xp, const struct Matrix *A, const struct Vector *b, struct Matrix **Lp, size_t hb);
+
 #endif

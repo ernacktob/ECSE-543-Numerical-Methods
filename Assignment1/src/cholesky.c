@@ -59,6 +59,55 @@ static int cholesky_decomposition(double **A, size_t n)
 	return 0;
 }
 
+/* Cholesky decomposition banded
+ * 
+ * Decomposes an n x n real symmetric positive-definite matrix
+ * into its Cholesky decomposition L*L^T where L is lower-triangular.
+ *
+ * This version exploits the banded nature of A to speed up computation.
+ *
+ * The matrix argument A is overwritten with the result of L.
+ * Only the lower half of the matrix is touched, the upper-half
+ * remains undefined.
+ *
+ * Parameters:
+ * n - dimension of matrix
+ * A - matrix to decompose
+ * b - half-bandwidth of matrix
+ *
+ * Returns:
+ * 0 if operation was successful
+ * -1 if the matrix A is not positive-definite.
+ */
+static int cholesky_decomposition_banded(double **A, size_t n, size_t b)
+{
+	double **L = A;	/* The result overwrites lower half of A */
+	size_t i, j, k;
+
+	for (j = 0; j < n; j++) {
+		/* Check that the matrix is positive-definite */
+		if (A[j][j] <= 0.0)
+			return -1;
+
+		L[j][j] = sqrt(A[j][j]);
+
+		/* Check again that L[j][j] > 0 in case that
+		 * the sqrt introduced round-off errors... */
+		if (L[j][j] <= 0.0)
+			return -1;
+
+		/* Can skip most of the entries after the half bandwidth because they are 0. */
+		for (i = j + 1; i < j + b && i < n; i++) {
+			L[i][j] = A[i][j] / L[j][j];
+
+			for (k = j + 1; k <= i; k++)
+				A[i][k] = A[i][k] - L[i][j] * L[k][j];
+		}
+	}
+
+	return 0;
+}
+
 /* Forward elimination
  *
  * Performs forward elimination to solve the equation Ly = b,
@@ -131,6 +180,45 @@ int cholesky_solve_system(struct Vector **xp, const struct Matrix *A, const stru
 	L = Matrix_copy(A);
 
 	if (cholesky_decomposition(L->entries, L->n) != 0) {
+		Matrix_delete(L);
+		return -1;
+	}
+
+	x = Vector_copy(b);
+
+	forward_elimination(x->entries, L->entries, x->n);
+	back_substitution(x->entries, L->entries, x->n);
+
+	if (Lp != NULL) {
+		zero_upper_triangle(L);
+		*Lp = L;
+	} else {
+		Matrix_delete(L);
+	}
+
+	*xp = x;
+
+	return 0;
+}
+
+/* See cholesky.h header for documentation */
+int cholesky_solve_system_banded(struct Vector **xp, const struct Matrix *A, const struct Vector *b, struct Matrix **Lp, size_t hb)
+{
+	struct Matrix *L;
+	struct Vector *x;
+
+	if (A->m != A->n)
+		exit_with_error("Matrix A must be a square matrix.");
+
+	if (b->n != A->m)
+		exit_with_error("Matrix A and vector b not compatible for the system of equations.");
+
+	if (!Matrix_is_symmetric(A))
+		return -1;
+
+	L = Matrix_copy(A);
+
+	if (cholesky_decomposition_banded(L->entries, L->n, hb) != 0) {
 		Matrix_delete(L);
 		return -1;
 	}

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "circuits.h"
 #include "utils.h"
@@ -7,10 +8,11 @@ int main(int argc, const char *argv[])
 {
 	struct CircuitDescription circuit;
 	struct Vector *V;
+	size_t N;
 	double R;
 
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+	if (argc != 3) {
+		fprintf(stderr, "Usage: %s <filename> <N>\n", argv[0]);
 		return 0;
 	}
 
@@ -19,7 +21,9 @@ int main(int argc, const char *argv[])
 		return -1;
 	}
 
-	V = circuits_solve_voltages(&circuit);
+	N = strtoul(argv[2], NULL, 10);
+	V = circuits_solve_voltages_banded(&circuit, N + 1);
+
 	R = (1000.0 * (V->entries[V->n - 1] / 1.0)) / (1.0 - (V->entries[V->n - 1] / 1.0));
 
 	printf("Resistance of mesh: %f ohms.\n", R);
