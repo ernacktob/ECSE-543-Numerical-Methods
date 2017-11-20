@@ -8,6 +8,8 @@
 !*.py
 !.gitignore
 !Makefile
+!*.txt
+!*.dat
 
 # Unignore all dirs
 !*/
