@@ -10,6 +10,7 @@
 !Makefile
 !*.txt
 !*.dat
+!*.out
 
 # Unignore all dirs
 !*/
